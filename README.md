@@ -1,7 +1,7 @@
 <h1 align="center">Claude for Safari</h1>
 
 <p align="center">
-  <strong>给你的 AI Agent 装上 Safari 浏览器操控能力</strong>
+  <strong>Give your AI Agent the power to control Safari</strong>
 </p>
 
 <p align="center">
@@ -11,162 +11,137 @@
 </p>
 
 <p align="center">
-  <a href="#快速上手">快速开始</a> · <a href="#它能做什么">功能</a> · <a href="#对比">对比</a> · <a href="#常见问题">FAQ</a>
+  <a href="#quick-start">Quick Start</a> · <a href="#features">Features</a> · <a href="#faq">FAQ</a>
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> | <a href="README_CN.md">中文</a>
 </p>
 
 ---
 
-## 为什么需要这个？
+## Why This?
 
-你想让 AI Agent 帮你操作浏览器——然后发现：
+You want your AI Agent to help with browser tasks — then you discover:
 
-- 🔒 **Playwright** → 独立浏览器实例，没有你的登录态和 Cookie，小红书等网站直接超时
-- 🧩 **Chrome ACP** → 需要安装 Chrome 扩展 + 代理服务器，而且你日常用的是 Safari
-- 👀 **Computer Use** → 截屏识别太慢，操作不精准，还需要复杂的环境配置
-- 📝 **手动复制粘贴** → 每次都要自己把网页内容喂给 AI，效率极低
+- 🔒 **Playwright** → Separate browser instance, hijacks your session
+- 🧩 **Claude for Chrome** → Requires Chrome extension, doesn't work with Safari
+- 📝 **Copy & paste** → Manually feeding page content to AI every time
 
-**你只是想让 AI 直接用你的 Safari，就像你自己操作一样。**
+**You just want AI to use your Safari, as if you were doing it yourself.**
 
-**Claude for Safari 把这一切变成一句话：**
+**Claude for Safari makes it one command:**
 
 ```
 npx skills add SDLLL/claude-for-safari
 ```
 
-安装后对 Claude 说「帮我看看 Safari 里打开了什么」，它就能直接读取、操控你的真实浏览器。
+After installing, tell Claude "check what's open in my Safari" — it reads and controls your real browser directly.
 
 ---
 
-## 快速上手
+## Quick Start
 
-复制这行命令，在终端运行：
+Run this in your terminal:
 
 ```bash
 npx skills add SDLLL/claude-for-safari
 ```
 
-然后启动 [Claude Code](https://claude.ai/download)：
+Then launch [Claude Code](https://claude.ai/download):
 
 ```bash
 claude
 ```
 
-对它说「帮我看看 Safari 当前打开了哪些网页」。Agent 会自动引导完成权限配置。
+Say "show me what tabs are open in Safari". The agent will guide you through permission setup automatically.
 
-> 兼容任何支持 Skills 的 AI Agent：Claude Code、Cursor、Windsurf 等。
+> Compatible with any AI Agent that supports Skills: Claude Code, Cursor, Windsurf, etc.
 
-### 前置配置（仅首次）
+### First-Time Setup
 
-Agent 会自动检测并引导你完成，但你也可以提前配置：
+The agent auto-detects and guides you, but you can configure ahead of time:
 
-1. **系统设置 > 隐私与安全性 > 自动化** → 允许终端控制 Safari
-2. **Safari > 设置 > 高级** → 开启「显示网页开发者功能」
-3. **Safari > 开发菜单** → 勾选「允许 Apple 事件的 JavaScript」
-4. **（可选）系统设置 > 隐私与安全性 > 屏幕录制** → 允许终端录屏（启用后台截图）
-
----
-
-## 它能做什么
-
-零安装，纯 macOS 原生能力，一个 Skill 覆盖所有浏览器操作：
-
-| 能力 | Agent 做的事 | 实现方式 |
-|------|------------|---------|
-| **查看标签页** | 列出所有窗口和标签的标题、URL | AppleScript |
-| **读取页面** | 提取页面文本、结构化数据、简化 DOM | AppleScript + JavaScript |
-| **执行 JS** | 在页面上下文中运行任意 JavaScript | AppleScript `do JavaScript` |
-| **截图** | 截取 Safari 窗口画面，AI 可以"看到"页面 | `screencapture` |
-| **导航** | 打开 URL、新建标签页、新建窗口 | AppleScript |
-| **点击** | 点击页面元素（兼容 React/Vue/Angular） | JavaScript `dispatchEvent` |
-| **输入** | 填写表单、模拟键盘输入 | JavaScript + System Events |
-| **滚动** | 上下滚动、滚动到指定元素 | JavaScript `scrollBy/scrollTo` |
-| **切换标签** | 按序号或 URL 关键词切换标签页 | AppleScript |
-| **等待加载** | 等待页面加载完成后再操作 | JavaScript `readyState` |
-
-### 截图模式
-
-| 模式 | 需要权限 | 是否切换窗口 | 适用场景 |
-|------|---------|------------|---------|
-| **后台截图** | 屏幕录制权限 | 不切换 | 推荐，无感截图 |
-| **前台截图** | 无需额外权限 | 短暂切换 (~0.3s) | 默认，自动切回 |
+1. **System Settings > Privacy & Security > Automation** → Allow terminal to control Safari
+2. **Safari > Settings > Advanced** → Enable "Show features for web developers"
+3. **Safari > Develop menu** → Check "Allow JavaScript from Apple Events"
+4. **(Optional) System Settings > Privacy & Security > Screen Recording** → Allow terminal (enables background screenshots)
 
 ---
 
-## 对比
+## Features
 
-| | Claude for Safari | Chrome ACP | Playwright | Computer Use |
-|---|:---:|:---:|:---:|:---:|
-| 使用你的真实浏览器 | ✅ | ✅ | ❌ | ✅ |
-| 共享登录态 & Cookie | ✅ | ✅ | ❌ | ✅ |
-| 不触发反爬机制 | ✅ | ✅ | ❌ | ✅ |
-| 截图能力 | ✅ | ❌ | ✅ | ✅ |
-| 零安装 | ✅ | ❌ | ❌ | ❌ |
-| 人机协作（同一窗口） | ✅ | ✅ | ❌ | ✅ |
-| 后台操作（不抢焦点） | ✅* | ✅ | ✅ | ❌ |
-| 跨平台 | macOS | 全平台 | 全平台 | 全平台 |
+Zero install. Pure macOS native capabilities. One Skill covers all browser operations:
 
-*需要授予屏幕录制权限
+| Capability | What the Agent Does | How |
+|---|---|---|
+| **List tabs** | List all windows and tabs with title & URL | AppleScript |
+| **Read pages** | Extract text, structured data, simplified DOM | AppleScript + JavaScript |
+| **Execute JS** | Run arbitrary JavaScript in page context | AppleScript `do JavaScript` |
+| **Screenshot** | Capture Safari window — AI can "see" the page | `screencapture` |
+| **Navigate** | Open URLs, new tabs, new windows | AppleScript |
+| **Click** | Click elements (React/Vue/Angular compatible) | JavaScript `dispatchEvent` |
+| **Type** | Fill forms, simulate keyboard input | JavaScript + System Events |
+| **Scroll** | Scroll up/down, scroll to element | JavaScript `scrollBy/scrollTo` |
+| **Switch tabs** | Switch by index or URL keyword | AppleScript |
+| **Wait for load** | Wait until page is fully loaded | JavaScript `readyState` |
+
+### Screenshot Modes
+
+| Mode | Permission Required | Window Switch | Best For |
+|---|---|---|---|
+| **Background** | Screen Recording | No switch | Recommended, seamless |
+| **Foreground** | None | Brief (~0.3s) | Default, auto-switches back |
 
 ---
 
-## 工作原理
+## How It Works
 
 ```
-Claude Code ──osascript──► Safari（读取/操控你的真实浏览器）
+Claude Code ──osascript──► Safari (reads/controls your real browser)
      │
-     └──screencapture──► 截图 ──► Claude 看到页面内容
+     └──screencapture──► screenshot ──► Claude sees the page
 ```
 
-没有扩展，没有代理服务器，没有额外进程。
+No extensions. No proxy servers. No extra processes.
 
-所有操作都通过 macOS 原生的 AppleScript 和 screencapture 完成，Safari 看到的就是真实用户操作。
-
----
-
-## 常见问题
-
-<details>
-<summary><strong>需要提前安装什么吗？</strong></summary>
-
-不需要安装任何软件。本 Skill 完全依赖 macOS 内置的 AppleScript 和 screencapture，开箱即用。只需在首次使用时授予几个系统权限。
-</details>
-
-<details>
-<summary><strong>支持 Chrome / Firefox / Arc 吗？</strong></summary>
-
-目前仅支持 Safari。其他浏览器推荐使用 <a href="https://github.com/nicepkg/playwright-mcp">Playwright MCP</a> 或 <a href="https://github.com/nicepkg/playwright-mcp">Chrome ACP</a>。Safari 是 macOS 上唯一完整支持 AppleScript 自动化的浏览器。
-</details>
-
-<details>
-<summary><strong>会触发网站的反爬机制吗？</strong></summary>
-
-不会。Agent 操控的是你自己的 Safari 浏览器，对网站来说就是正常的用户操作。不存在 Playwright 那样的自动化特征检测问题。
-</details>
-
-<details>
-<summary><strong>截图时窗口会闪一下？</strong></summary>
-
-如果没有授予屏幕录制权限，截图时需要短暂激活 Safari 窗口（约 0.3 秒），之后会自动切回。授予屏幕录制权限后可以实现完全后台截图，不会有任何窗口切换。
-</details>
-
-<details>
-<summary><strong>安全吗？AI 会不会乱操作？</strong></summary>
-
-Claude Code 的权限系统会在每次敏感操作前征求你的确认。你可以选择逐条审批或批量授权。所有操作都在你的终端中可见。
-</details>
-
-<details>
-<summary><strong>兼容哪些 AI Agent？</strong></summary>
-
-任何支持 Claude Code Skills 的 AI Agent 都能用，包括 Claude Code、Cursor、Windsurf 等。
-</details>
+Everything runs through macOS native AppleScript and screencapture. Websites see a real user — no automation fingerprints.
 
 ---
 
-## 致谢
+## FAQ
 
-- [Chrome ACP](https://github.com/nicepkg/playwright-mcp) — 本项目的灵感来源
-- [Playwright MCP](https://github.com/nicepkg/playwright-mcp) — 跨平台浏览器自动化方案
+<details>
+<summary><strong>Do I need to install anything?</strong></summary>
+
+No. This Skill relies entirely on macOS built-in AppleScript and screencapture. Just grant a few system permissions on first use.
+</details>
+
+<details>
+<summary><strong>Does it support Chrome / Firefox / Arc?</strong></summary>
+
+Safari only. For other browsers, use <a href="https://github.com/nicepkg/playwright-mcp">Playwright MCP</a> or <a href="https://github.com/Areo-Joe/chrome-acp">Chrome ACP</a>. Safari is the only macOS browser with full AppleScript automation support.
+</details>
+
+<details>
+<summary><strong>Is it safe? Will AI do random things?</strong></summary>
+
+Claude Code's permission system asks for your confirmation before every sensitive action. You can approve individually or in bulk. All operations are visible in your terminal.
+</details>
+
+<details>
+<summary><strong>The window flickers when taking screenshots?</strong></summary>
+
+Without Screen Recording permission, Safari briefly activates (~0.3s) then switches back. Grant Screen Recording permission for fully background screenshots with zero window switching.
+</details>
+
+<details>
+<summary><strong>Which AI Agents are compatible?</strong></summary>
+
+Any agent supporting Claude Code Skills: Claude Code, Cursor, Windsurf, etc.
+</details>
+
+---
 
 ## License
 
