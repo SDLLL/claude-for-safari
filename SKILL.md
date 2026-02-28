@@ -184,9 +184,18 @@ sleep 0.3
 BOUNDS=$(osascript -e '
 tell application "System Events"
   tell process "Safari"
-    set {x, y} to position of front window
-    set {w, h} to size of front window
-    return (x as text) & "," & (y as text) & "," & (w as text) & "," & (h as text)
+    -- Safari may expose a thin toolbar as window 1; find the largest window
+    set bestW to 0
+    set bestBounds to ""
+    repeat with i from 1 to (count of windows)
+      set {x, y} to position of window i
+      set {w, h} to size of window i
+      if w * h > bestW then
+        set bestW to w * h
+        set bestBounds to (x as text) & "," & (y as text) & "," & (w as text) & "," & (h as text)
+      end if
+    end repeat
+    return bestBounds
   end tell
 end tell')
 screencapture -x -R "$BOUNDS" /tmp/safari_screenshot.png
