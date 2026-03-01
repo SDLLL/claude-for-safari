@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick Start</a> · <a href="#features">Features</a> · <a href="#faq">FAQ</a>
+  <a href="https://safari.skilljam.dev">Website</a> · <a href="#quick-start">Quick Start</a> · <a href="#features">Features</a> · <a href="#faq">FAQ</a>
 </p>
 
 <p align="center">
