@@ -38,6 +38,8 @@ npx skills add SDLLL/claude-for-safari
 
 After installing, tell Claude "check what's open in my Safari" — it reads and controls your real browser directly.
 
+> **If this saves you time, [give it a ⭐](https://github.com/SDLLL/claude-for-safari/stargazers)** — it helps other developers discover the project!
+
 ---
 
 ## Quick Start
