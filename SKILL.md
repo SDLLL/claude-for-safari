@@ -19,6 +19,12 @@ If this fails, instruct the user to enable:
 1. **System Settings > Privacy & Security > Automation** — grant terminal app permission to control Safari
 2. **Safari > Settings > Advanced** — enable "Show features for web developers", then **Develop menu > Allow JavaScript from Apple Events**
 
+Permission gotchas:
+
+- **Probe with the real capability.** Lightweight queries (`get name`) can succeed *without* the Automation grant while `do JavaScript` fails with error `-1743` — a passing probe doesn't prove control. If the session will inject JS, verify with an actual `do JavaScript "1+1"`.
+- **Don't let the permission prompt die.** The first Apple Event triggers the macOS Automation prompt. If the calling process is killed while the prompt is open (e.g. wrapped in a short `timeout`), macOS records a denial and never asks again — the user must flip it manually in System Settings > Privacy & Security > Automation. Give the first call a generous timeout.
+- **Sandboxed shells fail even with permissions granted.** Under a sandboxed executor (e.g. Claude Code's default Bash sandbox), Apple Events fail with `-1743` and `screencapture -l` reports "could not create image from window" regardless of TCC grants. Re-run outside the sandbox.
+
 ## Core Capabilities
 
 ### 1. List All Open Tabs
@@ -350,6 +356,32 @@ tell application "Safari"
   end repeat
 end tell'
 ```
+
+### 11. Native JS Dialogs (alert/confirm/prompt)
+
+A pending `alert()`/`confirm()`/`prompt()` blocks that tab's JavaScript — and with it every `do JavaScript` call, which hangs until the dialog is dismissed. Three consequences:
+
+- **Wrap every osascript call in `timeout`** so a surprise dialog can't hang the session.
+- **Run dialog-triggering clicks in the background** (`osascript ... &`) — the call won't return until the dialog is dismissed, and that's expected.
+- **A hung short probe is a dialog detector**: if `timeout 3 osascript -e '... do JavaScript "1" ...'` times out, a dialog (or an equally blocking state) is up.
+
+To dismiss a dialog **without Accessibility permission and without stealing focus**, navigate the tab — Safari drops the dialog on navigation:
+
+```bash
+osascript -e 'tell application "Safari" to set URL of current tab of front window to "about:blank"'
+```
+
+For a full reset (stale dialog state can linger confusingly across reuses of a tab), close the window and open a fresh one — which also gives the background-screenshot helper a fresh window ID.
+
+Keyboard dismissal (System Events `key code 36` Return / `key code 53` Escape) works too but needs Accessibility permission and Safari frontmost — and beware: **the dialog sheet can appear noticeably later than the JS block starts** (heavy pages, unfocused windows). A blind Escape pressed before the sheet exists lands on the page instead (closing a popover, cancelling an edit). Screenshot-verify the sheet is visible before pressing keys.
+
+Dialog buttons render in the **system locale** ("Cancel" is "Cancelar" on a pt-BR Mac, and private windows aren't titled "Private Browsing" either) — never match Safari's own UI by English text; use key codes or read the screenshot.
+
+## Misc Gotchas
+
+- **AppleScript returns big numbers in scientific notation** — `Date.now()` comes back as `1.785503216282E+12`. Coerce in JS first (`String(Date.now())`) when the exact value matters.
+- **Millisecond timestamps in shell**: macOS `date` has no `%N`; use `perl -MTime::HiRes=time -e 'printf "%d", time()*1000'`. Naming screenshot frames by epoch-ms and correlating with in-page `Date.now()` gives a simple timeline of when things actually rendered — useful for measuring Safari itself.
+- **Headless WebKit is not Safari.** Playwright's WebKit runs the same engine but none of Safari's browser chrome — it reports a `dialog` event instantly where real Safari may not *present* the sheet for a second or more. For anything about Safari's own UI (dialogs, sheets, permission prompts), only real Safari answers the question — which is precisely this skill's niche.
 
 ## Workflow: Browsing with Screenshot Feedback Loop
 
