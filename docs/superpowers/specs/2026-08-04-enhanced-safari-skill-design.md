@@ -31,6 +31,7 @@ claude-for-safari/
 │   ├── control_indicator_remove.js
 │   ├── form_discover.js
 │   ├── form_fill.js
+│   ├── form_fill_runner.jxa
 │   ├── net_monitor.js
 │   ├── net_read.js
 │   ├── net_remove.js
@@ -62,7 +63,9 @@ claude-for-safari/
 ### Target resolution
 
 - Resolve the intended Safari window and tab before any action.
-- Preserve a stable AppleScript tab object or a window ID plus current bounds; do not switch from one identity mechanism to a title-based guess.
+- Treat Safari AppleScript window/tab objects, Accessibility windows, and CoreGraphics window IDs as three distinct identity namespaces. Never pass an ID from one API to another as if it were interchangeable.
+- Preserve a stable Safari AppleScript tab object for page actions. Use a CoreGraphics window ID only for `screencapture`.
+- When a screenshot must be correlated with an AppleScript/Accessibility window, match current screen bounds and descriptive metadata and require exactly one match. Re-check immediately before capture or coordinate conversion; abort on zero or multiple matches.
 - Abort if the target is missing, stale, or ambiguous.
 - Re-resolve and verify the target after navigation or window reordering.
 
@@ -81,13 +84,15 @@ claude-for-safari/
 - Display a generic message such as `AI agent is controlling this tab`.
 - Be idempotent and use a namespaced DOM ID and page-global variable.
 - Never block pointer input.
+- Default to enabled for page-changing DOM actions when JavaScript injection is available. Do not inject it for read-only operations or coordinate-only fallback.
 - Be best-effort: failure to display is reported but does not prevent a separately authorized action.
 - Provide explicit removal and tolerate repeated cleanup.
 
 ### Form discovery and filling
 
 - Discover visible supported controls with stable selectors, labels, types, options, and state.
-- Pass fill specifications as JSON through an environment variable or standard input; never splice form values into shell, AppleScript, or JavaScript source.
+- Pass fill specifications in a `FORM_SPEC_JSON` environment variable to the bundled `form_fill_runner.jxa`; never interpolate raw values into a shell command or AppleScript literal.
+- The JXA runner reads and parses `FORM_SPEC_JSON`, rejects non-array input, and re-serializes the validated value with `JSON.stringify`. It then constructs a fixed wrapper that passes only the `JSON.stringify` output to the already-installed page function from `form_fill.js`. This serialization step is the only permitted insertion into page JavaScript source; manual concatenation or shell substitution of raw form values is forbidden.
 - Support text-like inputs, textarea, select, checkbox, radio, and contenteditable controls.
 - Exclude password, file upload, one-time-code, payment-card, token, and secret-like controls in code. Never return their values.
 - Treat readonly, disabled, unsupported, missing, and ambiguous controls as per-field errors.
@@ -99,7 +104,8 @@ claude-for-safari/
 
 - Describe the feature as an in-page fetch/XHR observer, not native network interception.
 - Default to metadata only: redacted URL, method, status, content type, start time, and duration.
-- Redact sensitive query parameters such as tokens, passwords, authorization codes, secrets, and session identifiers.
+- Store at most 100 entries. When explicitly enabled, store at most 2,048 decoded text characters per request or response body and stop reading the clone stream after the limit; never materialize an unbounded response solely for logging.
+- Redact URL query parameters and structured body keys matching, case-insensitively: `token`, `access_token`, `refresh_token`, `auth`, `authorization`, `code`, `key`, `api_key`, `password`, `passwd`, `secret`, `session`, `sid`, `cookie`, or `jwt`. Replace values with `[REDACTED]`. Also redact Bearer credentials and compact JWT-shaped strings in unstructured text.
 - Capture body snippets only after the user explicitly requests body capture for the current tab and origin.
 - When body capture is authorized, cap stored text, redact common secret keys, avoid binary content, and avoid reading an unbounded response into memory.
 - Track each fetch/XHR request exactly once, including XHR object reuse.
@@ -109,8 +115,9 @@ claude-for-safari/
 ### Window helper
 
 - Keep the CoreGraphics helper as a bundled Swift source file.
-- Support returning the frontmost Safari window ID and listing all visible Safari window IDs with titles when available.
-- Treat window titles as descriptive metadata, not authoritative identity.
+- Support returning the frontmost Safari CoreGraphics window ID and listing all visible Safari CoreGraphics window IDs with current bounds and titles when available.
+- Document that these IDs are valid only for CoreGraphics and `screencapture`; they are not Safari AppleScript window IDs.
+- Treat titles as descriptive metadata, not authoritative identity. Use bounds plus metadata only to form a unique, freshly verified correlation; otherwise abort.
 - Detect and report when `swiftc` or the required developer tools are unavailable.
 
 ## References
