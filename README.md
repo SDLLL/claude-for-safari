@@ -67,13 +67,14 @@ The agent auto-detects and guides you, but you can configure ahead of time:
 1. **System Settings > Privacy & Security > Automation** → Allow terminal to control Safari
 2. **Safari > Settings > Advanced** → Enable "Show features for web developers"
 3. **Safari > Develop menu** → Check "Allow JavaScript from Apple Events"
-4. **(Optional) System Settings > Privacy & Security > Screen Recording** → Allow terminal (enables background screenshots)
+4. **(Optional) System Settings > Privacy & Security > Screen Recording** → Allow the terminal or agent host (enables reliable background screenshots)
+5. **(Optional) System Settings > Privacy & Security > Accessibility** → Required only for System Events clicks and keystrokes
 
 ---
 
 ## Features
 
-Zero install. Pure macOS native capabilities. One Skill covers all browser operations:
+No browser extension, proxy, or persistent daemon. The core uses macOS-native capabilities; optional window helpers require an available Swift toolchain.
 
 | Capability | What the Agent Does | How |
 |---|---|---|
@@ -84,6 +85,9 @@ Zero install. Pure macOS native capabilities. One Skill covers all browser opera
 | **Navigate** | Open URLs, new tabs, new windows | AppleScript |
 | **Click** | Click elements (React/Vue/Angular compatible) | JavaScript `dispatchEvent` |
 | **Type** | Fill forms, simulate keyboard input | JavaScript + System Events |
+| **Safe form filling** | Discover fields and fill supported non-sensitive controls with per-field verification | Bundled JavaScript + JXA |
+| **Network observation** | Observe redacted page-level fetch/XHR metadata; bodies are explicit opt-in | Bundled JavaScript |
+| **Control indicator** | Show when an agent is changing a page and clean up afterward | Bundled JavaScript |
 | **Scroll** | Scroll up/down, scroll to element | JavaScript `scrollBy/scrollTo` |
 | **Switch tabs** | Switch by index or URL keyword | AppleScript |
 | **Wait for load** | Wait until page is fully loaded | JavaScript `readyState` |
@@ -93,7 +97,7 @@ Zero install. Pure macOS native capabilities. One Skill covers all browser opera
 | Mode | Permission Required | Window Switch | Best For |
 |---|---|---|---|
 | **Background** | Screen Recording | No switch | Recommended, seamless |
-| **Foreground** | None | Brief (~0.3s) | Default, auto-switches back |
+| **User-visible** | Varies by macOS policy | Yes | Fallback when background capture is unavailable |
 
 ---
 
@@ -105,9 +109,9 @@ Claude Code ──osascript──► Safari (reads/controls your real browser)
      └──screencapture──► screenshot ──► Claude sees the page
 ```
 
-No extensions. No proxy servers. No extra processes.
+No extensions, proxy servers, or persistent background services.
 
-Everything runs through macOS native AppleScript and screencapture. Websites see a real user — no automation fingerprints.
+The skill uses AppleScript, page JavaScript, `screencapture`, and optional bundled helpers. Page-injected helpers can be detected by websites and are removed after use.
 
 ---
 
@@ -116,7 +120,7 @@ Everything runs through macOS native AppleScript and screencapture. Websites see
 <details>
 <summary><strong>Do I need to install anything?</strong></summary>
 
-No. This Skill relies entirely on macOS built-in AppleScript and screencapture. Just grant a few system permissions on first use.
+The core requires no browser extension or separate automation browser. It uses macOS AppleScript and `screencapture`; compiling the optional multi-window helper requires `swiftc`/Apple Command Line Tools.
 </details>
 
 <details>
@@ -128,13 +132,13 @@ Safari only. For other browsers, use <a href="https://github.com/nicepkg/playwri
 <details>
 <summary><strong>Is it safe? Will AI do random things?</strong></summary>
 
-Claude Code's permission system asks for your confirmation before every sensitive action. You can approve individually or in bulk. All operations are visible in your terminal.
+The skill requires target verification, preserves site confirmation dialogs, excludes sensitive form fields, and asks for authorization before consequential actions. Your agent host's own permission policy still applies.
 </details>
 
 <details>
 <summary><strong>The window flickers when taking screenshots?</strong></summary>
 
-Without Screen Recording permission, Safari briefly activates (~0.3s) then switches back. Grant Screen Recording permission for fully background screenshots with zero window switching.
+Grant Screen Recording permission to the terminal or agent host for reliable background window capture. Without it, use a user-visible Screenshot workflow and verify the resulting image rather than assuming capture succeeded.
 </details>
 
 <details>
@@ -142,6 +146,15 @@ Without Screen Recording permission, Safari briefly activates (~0.3s) then switc
 
 Any agent supporting Claude Code Skills: Claude Code, Cursor, Windsurf, etc.
 </details>
+
+---
+
+## Acknowledgements
+
+- [@rrecio](https://github.com/rrecio) contributed the form, control-indicator, window-helper, network-observer, and real-Safari testing ideas in [PR #2](https://github.com/SDLLL/claude-for-safari/pull/2).
+- [@jordan-brough](https://github.com/jordan-brough) contributed permission, dialog, locale, timestamp, and Safari UI measurement findings in [PR #3](https://github.com/SDLLL/claude-for-safari/pull/3).
+
+Their work informed the maintainer-integrated, safety-hardened implementation.
 
 ---
 

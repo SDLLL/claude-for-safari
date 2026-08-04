@@ -1,0 +1,38 @@
+ObjC.import("Foundation");
+
+function env(name) {
+  var value = $.NSProcessInfo.processInfo.environment.objectForKey(name);
+  return value ? value.js : null;
+}
+
+function positiveIndex(name, fallback) {
+  var raw = env(name);
+  if (raw === null) return fallback;
+  var value = Number(raw);
+  if (!Number.isInteger(value) || value < 1) throw new Error(name + " must be a positive integer");
+  return value - 1;
+}
+
+var rawSpec = env("FORM_SPEC_JSON");
+if (rawSpec === null) {
+  var specPath = env("FORM_SPEC_PATH");
+  if (specPath === null) throw new Error("FORM_SPEC_JSON or FORM_SPEC_PATH is required");
+  var fileValue = $.NSString.stringWithContentsOfFileEncodingError(specPath, $.NSUTF8StringEncoding, null);
+  if (!fileValue) throw new Error("Unable to read FORM_SPEC_PATH");
+  rawSpec = fileValue.js;
+}
+var spec = JSON.parse(rawSpec);
+if (!Array.isArray(spec)) throw new Error("FORM_SPEC_JSON must contain a JSON array");
+
+var safari = Application("Safari");
+var windowIndex = positiveIndex("SAFARI_WINDOW_INDEX", 0);
+if (safari.windows.length <= windowIndex) throw new Error("Safari window not found");
+var safariWindow = safari.windows[windowIndex];
+var tabIndex = positiveIndex("SAFARI_TAB_INDEX", -1);
+var safariTab = tabIndex >= 0 ? safariWindow.tabs[tabIndex] : safariWindow.currentTab();
+if (!safariTab) throw new Error("Safari tab not found");
+
+var serialized = JSON.stringify(spec);
+var source = "JSON.stringify(window.__safariAgentFillForms(" + serialized + "))";
+var result = safari.doJavaScript(source, { in: safariTab });
+result;
