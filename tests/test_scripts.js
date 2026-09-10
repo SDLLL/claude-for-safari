@@ -274,3 +274,70 @@ test("fixture includes sensitive and supported controls", () => {
   assert.match(fixture, /contenteditable="true"/);
   assert.match(fixture, /name="api_key"/);
 });
+
+// JXA's ObjC bridge returns a *truthy* wrapper for nil, whose `.js` is
+// undefined. These tests run the runner against a bridge mock with that
+// behavior so a `value ? value.js : null` style regression fails here.
+function runRunner(environment, { specFiles = {}, windows } = {}) {
+  const NIL = Object.freeze({ js: undefined });
+  const ns = (value) => (value === undefined ? NIL : { js: value });
+  const calls = [];
+  const safariWindows = windows || [
+    { tabs: [{ name: "first" }, { name: "second" }], currentTab: () => ({ name: "current" }) },
+  ];
+
+  const context = {
+    ObjC: { import() {} },
+    $: {
+      NSUTF8StringEncoding: 4,
+      NSProcessInfo: {
+        processInfo: {
+          environment: { objectForKey: (name) => ns(environment[name]) },
+        },
+      },
+      NSString: {
+        stringWithContentsOfFileEncodingError: (path) => ns(specFiles[path]),
+      },
+    },
+    Application: () => ({
+      windows: safariWindows,
+      doJavaScript(source, options) {
+        calls.push({ source, target: options.in });
+        return '[{"status":"filled"}]';
+      },
+    }),
+    JSON,
+    Number,
+    Error,
+    Array,
+  };
+
+  const result = vm.runInNewContext(source("form_fill_runner.jxa"), context);
+  return { result, calls };
+}
+
+const SPEC = [{ selector: { css: "#name", index: 0 }, value: "Ada" }];
+
+test("JXA runner reads the spec from FORM_SPEC_PATH", () => {
+  const { result, calls } = runRunner(
+    { FORM_SPEC_PATH: "/tmp/spec.json", SAFARI_WINDOW_INDEX: "1", SAFARI_TAB_INDEX: "2" },
+    { specFiles: { "/tmp/spec.json": JSON.stringify(SPEC) } },
+  );
+  assert.equal(result, '[{"status":"filled"}]');
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].source, /__safariAgentFillForms/);
+  assert.equal(calls[0].target.name, "second");
+});
+
+test("JXA runner falls back to the current tab when indexes are unset", () => {
+  const { calls } = runRunner({ FORM_SPEC_JSON: JSON.stringify(SPEC) });
+  assert.equal(calls[0].target.name, "current");
+});
+
+test("JXA runner reports missing and unreadable specs clearly", () => {
+  assert.throws(() => runRunner({}), /FORM_SPEC_JSON or FORM_SPEC_PATH is required/);
+  assert.throws(
+    () => runRunner({ FORM_SPEC_PATH: "/tmp/absent.json" }),
+    /Unable to read FORM_SPEC_PATH/,
+  );
+});
