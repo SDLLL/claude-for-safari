@@ -1,8 +1,15 @@
 ObjC.import("Foundation");
 
+// An ObjC nil is truthy in JXA, so a missing key must be detected by
+// unwrapping it: `value.js` is undefined for nil, never null.
+function unwrap(value) {
+  if (!value) return null;
+  var unwrapped = value.js;
+  return unwrapped === undefined ? null : unwrapped;
+}
+
 function env(name) {
-  var value = $.NSProcessInfo.processInfo.environment.objectForKey(name);
-  return value ? value.js : null;
+  return unwrap($.NSProcessInfo.processInfo.environment.objectForKey(name));
 }
 
 function positiveIndex(name, fallback) {
@@ -17,9 +24,8 @@ var rawSpec = env("FORM_SPEC_JSON");
 if (rawSpec === null) {
   var specPath = env("FORM_SPEC_PATH");
   if (specPath === null) throw new Error("FORM_SPEC_JSON or FORM_SPEC_PATH is required");
-  var fileValue = $.NSString.stringWithContentsOfFileEncodingError(specPath, $.NSUTF8StringEncoding, null);
-  if (!fileValue) throw new Error("Unable to read FORM_SPEC_PATH");
-  rawSpec = fileValue.js;
+  rawSpec = unwrap($.NSString.stringWithContentsOfFileEncodingError(specPath, $.NSUTF8StringEncoding, null));
+  if (rawSpec === null) throw new Error("Unable to read FORM_SPEC_PATH");
 }
 var spec = JSON.parse(rawSpec);
 if (!Array.isArray(spec)) throw new Error("FORM_SPEC_JSON must contain a JSON array");
