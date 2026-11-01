@@ -70,6 +70,35 @@ end tell'
 
 Use explicit `tab N of window M` references when the task identifies a non-current tab. Re-list after navigation, tab creation, or window reordering.
 
+## Work in a silent agent window (no focus changes)
+
+To act without disturbing the user, give the agent its own Safari window and address everything by that window's id. A window with `visible` set to `false` still loads pages and runs `do JavaScript`, never takes focus, and has no Dock icon. (Verified on macOS 27 / Safari: Safari never became the frontmost app while creating, navigating, opening tabs and running JavaScript in such a window.)
+
+Create it and remember its id (compare ids before/after; do not assume `front window`):
+
+```bash
+BEFORE=$(osascript -e 'tell application "Safari" to return (id of every window) as string')
+osascript -e 'tell application "Safari" to make new document with properties {URL:"about:blank"}'
+AGENT_WIN=$(osascript -e 'tell application "Safari" to return id of window 1')   # then verify it is not in $BEFORE
+osascript -e "tell application \"Safari\" to set visible of window id $AGENT_WIN to false"
+```
+
+Use `window id $AGENT_WIN` instead of `front window` for every command:
+
+```bash
+osascript -e "tell application \"Safari\" to set URL of tab 1 of window id $AGENT_WIN to \"https://example.com\""
+osascript -e "tell application \"Safari\" to do JavaScript \"document.readyState\" in tab 1 of window id $AGENT_WIN"
+osascript -e "tell application \"Safari\" to tell window id $AGENT_WIN to make new tab with properties {URL:\"https://example.org\"}"
+```
+
+Notes:
+
+- Never call `activate` or `set index` for the agent window. `set visible ... to true` shows the window without taking focus.
+- Screenshots need an on-screen window: set `visible` to `true`, wait about a second, capture, then hide it again. If the user is inside Safari they may see a brief flash.
+- If the user is in Safari while the window is created, Safari may flash it for a moment before it is hidden. Setting `index` of the user's window back to 1 only works while Safari is the active app.
+- Scripted minimizing (`set miniaturized`) was not reliable; use `visible`.
+- Keep the working tab selected in the agent window, and close only windows you created (`close window id $AGENT_WIN`). The user's own windows and tabs are never touched.
+
 ## Read pages
 
 Read the current page text:
