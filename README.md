@@ -87,7 +87,7 @@ No browser extension, proxy, or persistent daemon. The core uses macOS-native ca
 | **Type** | Fill forms, simulate keyboard input | JavaScript + System Events |
 | **Safe form filling** | Discover fields and fill supported non-sensitive controls with per-field verification | Bundled JavaScript + JXA |
 | **Network observation** | Observe redacted page-level fetch/XHR metadata; bodies are explicit opt-in | Bundled JavaScript |
-| **Control indicator** | Show when an agent is changing a page and clean up afterward | Bundled JavaScript |
+| **Control indicator** | Show when an agent is changing a page (glow, badge, **Stop** button, optional animated cursor) and clean up afterward | Bundled JavaScript |
 | **Scroll** | Scroll up/down, scroll to element | JavaScript `scrollBy/scrollTo` |
 | **Switch tabs** | Switch by index or URL keyword | AppleScript |
 | **Wait for load** | Wait until page is fully loaded | JavaScript `readyState` |
