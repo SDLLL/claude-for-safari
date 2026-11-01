@@ -131,7 +131,17 @@ Read the image, perform one action, then capture again to verify. If Screen Reco
 
 ## Show control status
 
-For page-changing DOM actions, inject `scripts/control_indicator.js` before the first action and after each full navigation. It displays `AI agent is controlling this tab` and does not intercept pointer input.
+For page-changing DOM actions, inject `scripts/control_indicator.js` before the first action and after each full navigation. It displays a pulsing frame and `AI agent is controlling this tab` with a **Stop** button; everything except the button ignores pointer input.
+
+**Honor Stop.** Before every page-changing action read `window.__safariAgentStopped` (it also survives reloads through `sessionStorage`, and a fresh injection restores it). If it is `true`, the user pressed Stop: perform no further actions and ask the user how to continue. `scripts/control_indicator_remove.js` clears the flag when the task ends.
+
+**Optional cursor.** To show where the agent is acting, set the target and inject `scripts/control_cursor.js` (the indicator must already be shown):
+
+```bash
+osascript -e 'tell application "Safari" to do JavaScript "window.__safariAgentCursor={x:420,y:330,click:true}" in current tab of front window'
+```
+
+`x`/`y` are viewport CSS pixels (for example the centre of `getBoundingClientRect()`); `click:true` adds a ripple. Inject it, wait about 0.6 s for the glide, then perform the real click. It returns `moved`, `clicked`, `indicator not shown`, or `invalid coordinates`.
 
 Do not inject it for read-only operations. Indicator failure does not authorize or block an otherwise approved action, but report the failure. Inject `scripts/control_indicator_remove.js` when the task ends and report cleanup failures.
 

@@ -47,6 +47,7 @@ class MockElement {
   closest() { return null; }
   focus() { this.focused = true; }
   dispatchEvent(event) { this.events.push(event.type); return true; }
+  addEventListener(type, listener) { this.listeners = Object.assign(this.listeners || {}, { [type]: listener }); }
   appendChild(child) { this.children.push(child); child.parent = this; }
   remove() { this.isConnected = false; if (this.parent) this.parent.children = this.parent.children.filter((child) => child !== this); }
 }
@@ -103,6 +104,70 @@ test("control indicator is idempotent and removable", () => {
   assert.equal(vm.runInContext(source("control_indicator.js"), context), "already shown");
   assert.equal(vm.runInContext(source("control_indicator_remove.js"), context), "removed");
   assert.equal(vm.runInContext(source("control_indicator_remove.js"), context), "not shown");
+});
+
+function makeIndicatorContext() {
+  const elements = new Map();
+  const body = new MockElement("body");
+  body.appendChild = (element) => { elements.set(element.id, element); element.parent = body; body.children.push(element); };
+  const store = new Map();
+  const sessionStorage = {
+    getItem: (name) => (store.has(name) ? store.get(name) : null),
+    setItem: (name, value) => store.set(name, String(value)),
+    removeItem: (name) => store.delete(name)
+  };
+  const document = {
+    body,
+    documentElement: body,
+    createElement: (tag) => new MockElement(tag),
+    getElementById: (id) => elements.get(id) || null
+  };
+  return { context: makeContext({ document, sessionStorage }), store };
+}
+
+test("control indicator Stop button latches a flag until the indicator is removed", () => {
+  const { context, store } = makeIndicatorContext();
+  assert.equal(vm.runInContext(source("control_indicator.js"), context), "shown");
+  const badge = context.window.__safariAgentControlIndicator.children[0];
+  const stop = badge.children.find((child) => child.tagName === "BUTTON");
+  assert.ok(stop && stop.listeners && stop.listeners.click, "Stop button has a click listener");
+  assert.equal(context.window.__safariAgentStopped, undefined);
+  stop.listeners.click({ preventDefault() {}, stopPropagation() {} });
+  assert.equal(context.window.__safariAgentStopped, true);
+  assert.equal(store.get("__safariAgentStopped"), "1");
+  assert.match(badge.children[0].textContent, /stopped/i);
+
+  // A fresh injection after navigation re-reads the flag from sessionStorage.
+  vm.runInContext(source("control_indicator_remove.js"), context);
+  store.set("__safariAgentStopped", "1");
+  assert.equal(vm.runInContext(source("control_indicator.js"), context), "shown");
+  assert.equal(context.window.__safariAgentStopped, true);
+
+  // Ending the task clears the Stop request.
+  vm.runInContext(source("control_indicator_remove.js"), context);
+  assert.equal(context.window.__safariAgentStopped, undefined);
+  assert.equal(store.has("__safariAgentStopped"), false);
+});
+
+test("control cursor needs the indicator, validates input, and moves or clicks", () => {
+  const { context } = makeIndicatorContext();
+  context.window.__safariAgentCursor = { x: 10, y: 20 };
+  assert.equal(vm.runInContext(source("control_cursor.js"), context), "indicator not shown");
+  vm.runInContext(source("control_indicator.js"), context);
+  context.window.__safariAgentCursor = { x: "nope", y: 20 };
+  assert.equal(vm.runInContext(source("control_cursor.js"), context), "invalid coordinates");
+  context.window.__safariAgentCursor = { x: 10.4, y: 20 };
+  assert.equal(vm.runInContext(source("control_cursor.js"), context), "moved");
+  const cursor = context.window.__safariAgentCursorElement;
+  assert.match(cursor.getAttribute("style"), /translate\(10px,20px\)/);
+  assert.doesNotMatch(cursor.getAttribute("style"), /transition/, "first placement does not glide in from 0,0");
+  context.window.__safariAgentCursor = { x: 300, y: 200, click: true };
+  assert.equal(vm.runInContext(source("control_cursor.js"), context), "clicked");
+  assert.equal(context.window.__safariAgentCursorElement, cursor, "cursor element is reused");
+  assert.match(cursor.getAttribute("style"), /transition:transform/);
+  assert.match(cursor.getAttribute("style"), /translate\(300px,200px\)/);
+  vm.runInContext(source("control_indicator_remove.js"), context);
+  assert.equal(context.window.__safariAgentCursorElement, undefined);
 });
 
 test("form discovery never returns sensitive values", () => {
