@@ -80,6 +80,7 @@ No browser extension, proxy, or persistent daemon. The core uses macOS-native ca
 |---|---|---|
 | **List tabs** | List all windows and tabs with title & URL | AppleScript |
 | **Read pages** | Extract text, structured data, simplified DOM | AppleScript + JavaScript |
+| **List by ref** | Compact list of interactive elements with stable `ref_N` ids, searchable, no secret values | Bundled JavaScript |
 | **Execute JS** | Run arbitrary JavaScript in page context | AppleScript `do JavaScript` |
 | **Screenshot** | Capture Safari window — AI can "see" the page | `screencapture` |
 | **Navigate** | Open URLs, new tabs, new windows | AppleScript |
