@@ -70,9 +70,9 @@ end tell'
 
 Use explicit `tab N of window M` references when the task identifies a non-current tab. Re-list after navigation, tab creation, or window reordering.
 
-## Work in a silent agent window (no focus changes)
+## Work in a dedicated agent window (no focus changes)
 
-To act without disturbing the user, give the agent its own Safari window and address everything by that window's id. A window with `visible` set to `false` still loads pages and runs `do JavaScript`, never takes focus, and has no Dock icon. (Verified on macOS 27 / Safari: Safari never became the frontmost app while creating, navigating, opening tabs and running JavaScript in such a window.)
+To act without disturbing the user, give the agent its own Safari window and address everything by that window's id, never `front window`. Creating such a window does not activate Safari, so **keep it visible by default**: the user can see it in the Window menu and watch what the agent does. Only if the user asks for zero visibility, set `visible` to `false`: a hidden window still loads pages and runs `do JavaScript` and never takes focus, but it is also absent from the Window menu, so the user cannot inspect it. (Verified on macOS 27 / Safari: Safari never became the frontmost app while creating, navigating, opening tabs and running JavaScript in such a window.)
 
 Create it and remember its id (compare ids before/after; do not assume `front window`):
 
@@ -80,6 +80,7 @@ Create it and remember its id (compare ids before/after; do not assume `front wi
 BEFORE=$(osascript -e 'tell application "Safari" to return (id of every window) as string')
 osascript -e 'tell application "Safari" to make new document with properties {URL:"about:blank"}'
 AGENT_WIN=$(osascript -e 'tell application "Safari" to return id of window 1')   # then verify it is not in $BEFORE
+# Optional, only when the user wants it fully invisible (it then disappears from the Window menu):
 osascript -e "tell application \"Safari\" to set visible of window id $AGENT_WIN to false"
 ```
 
